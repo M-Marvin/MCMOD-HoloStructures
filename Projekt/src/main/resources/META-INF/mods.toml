@@ -1,0 +1,8 @@
+modLoader="javafml"
+loaderVersion="[24,)"
+
+[[mods]]
+modId="holostructure"
+displayName="HoloStructure"
+authors="M_Marvin"
+description='''Schematica-Copy modified for 1.13.2'''
