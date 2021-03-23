@@ -1,14 +1,14 @@
 package de.holostructure.schematic;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 
 public class BlockObject {
 
 	private BlockPos position;
-	private IBlockState state;
+	private BlockState state;
 	
-	public BlockObject(BlockPos position, IBlockState state) {
+	public BlockObject(BlockPos position, BlockState state) {
 		this.position = position;
 		this.state = state;
 	}
@@ -17,7 +17,7 @@ public class BlockObject {
 		return position;
 	}
 	
-	public IBlockState getState() {
+	public BlockState getState() {
 		return state;
 	}
 	

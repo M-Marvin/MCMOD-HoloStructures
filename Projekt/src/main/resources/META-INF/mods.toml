@@ -1,8 +1,13 @@
 modLoader="javafml"
-loaderVersion="[24,)"
+loaderVersion="[33,)"
+
+license="All rights reserved"
+issueTrackerURL="https://github.com/M-Marvin/MCMOD-HoloStructures/issues"
 
 [[mods]]
 modId="holostructure"
+version="2.0"
 displayName="HoloStructure"
 authors="M_Marvin"
-description='''Schematica-Copy modified for 1.13.2'''
+credits="M_Marvin"
+description='''Schematica-Copy modified for 1.16.5'''

@@ -1,101 +1,126 @@
 package de.holostructure.render;
 
-import java.util.Random;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import de.holostructure.HoloStruckture;
-import net.minecraft.block.BlockContainer;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class RenderHelper {
-
-	@SuppressWarnings("deprecation")
-	public static void renderBlockAsGhost(IBlockState iblockstate, NBTTagCompound tileentitycompound, BlockPos blockpos, BlockPos structurePos, boolean castToNormal) {
+	
+	@SuppressWarnings({ "deprecation", "resource" })
+	public static void renderHoloBlock(BlockState iblockstate, CompoundNBT tileentitycompound, BlockPos blockpos, BlockPos structurePos, boolean castToNormal, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks) {
 		
-	    if (iblockstate != null ? (iblockstate.getBlock() != Blocks.AIR && iblockstate.getBlock() != Blocks.CAVE_AIR) : false) {
-	    	
-		    	 World world = Minecraft.getInstance().world;
-		         
-		    	 IBlockState existstate = castToNormal ? Blocks.AIR.getDefaultState() : world.getBlockState(blockpos.add(structurePos));
-		    	 
-		    	 GlStateManager.pushMatrix();
-		         GlStateManager.enableLighting();
-		         
-		         if (HoloStruckture.render_mode == EnumRendermode.COLOR) {
-		        	 if (existstate.getBlock() == iblockstate.getBlock() && !existstate.equals(iblockstate)) {
-			        	 GlStateManager.colorMask(true, false, true, true);
-			         } else if (!existstate.equals(iblockstate)) {
-			        	 GlStateManager.colorMask(true, true, false, true);
-			         }
-		         }
-		         
-		         if (!existstate.equals(iblockstate) || HoloStruckture.render_mode == EnumRendermode.NORMAL) {
-		        	 
-		        	    if (iblockstate.getBlock() instanceof BlockContainer) {
-		        	    	
-		        	    	TileEntity tileentity = iblockstate.getBlock().createTileEntity(iblockstate, world);
-		        	    	
-		        	    	if (tileentity != null) {
-		        	    		
-		        	    		TileEntityRendererDispatcher tileentityrenderdispatcher = TileEntityRendererDispatcher.instance;
-			        	    	TileEntityRenderer<TileEntity> tileentityrenderer = tileentityrenderdispatcher.getRenderer(tileentity.getClass());
-			        	    	
-			        	    	if (tileentityrenderer != null) {
-			        	    		
-			        	    		World tileentityworld = Minecraft.getInstance().world;
-				        	    	if (tileentitycompound != null) tileentity.read(tileentitycompound);
-				        	    	tileentity.setWorld(tileentityworld);
-				        	    	tileentity.setPos(blockpos.add(structurePos));
-				        	    	IBlockState oldstate = tileentityworld.getBlockState(blockpos.add(structurePos));
-				        	    	tileentityworld.setBlockState(blockpos.add(structurePos), iblockstate);
-				        	    	tileentity.markDirty();
-				        	    	tileentityworld.setBlockState(blockpos.add(structurePos), oldstate);
-				        	    	
-				        	    	try {
+		if (iblockstate != null ? (iblockstate.getBlock() != Blocks.AIR && iblockstate.getBlock() != Blocks.CAVE_AIR) : false) {
+						
+			World world = Minecraft.getInstance().world;
+			BlockState existstate = castToNormal ? Blocks.AIR.getDefaultState() : world.getBlockState(blockpos.add(structurePos));
+					
+			Minecraft.getInstance().getRenderManager().textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		 	
+			if (HoloStruckture.render_mode == EnumRendermode.COLOR) {
+				if (existstate.getBlock() == iblockstate.getBlock() && !existstate.equals(iblockstate)) {
+					GlStateManager.colorMask(true, false, true, true);
+				} else if (!existstate.equals(iblockstate)) {
+					GlStateManager.colorMask(true, true, false, true);
+				}
+			}
+			
+			if (!existstate.equals(iblockstate) || HoloStruckture.render_mode == EnumRendermode.NORMAL) {
 
-					        	    	tileentityrenderer.render(tileentity, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 0, -1);
-				        	    		
-				        	    	} catch (IllegalArgumentException e) {}
-				        	    	
- 			        	    	}
-		        	    		
-		        	    	}
-		        	    	
-		        	    }
-		        	 
-		        	 	Minecraft.getInstance().getRenderManager().textureManager.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-		        	 	
-		        	 	Tessellator tessellator = Tessellator.getInstance();
-		        	 	BufferBuilder bufferbuilder = tessellator.getBuffer();
-			         	bufferbuilder.begin(7, DefaultVertexFormats.BLOCK);
-			         
-			         	BlockRendererDispatcher blockrendererdispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
-			         	blockrendererdispatcher.getBlockModelRenderer().renderModel(world, blockrendererdispatcher.getModelForState(iblockstate), iblockstate, blockpos, bufferbuilder, false, new Random(), iblockstate.getPositionRandom(blockpos));
-			         	
-			         	tessellator.draw();
-		        	 
-		         }
+				//int combinedLightIn = WorldRenderer.getCombinedLight(Minecraft.getInstance().world, blockpos);
+				int combinedOverlayIn = OverlayTexture.NO_OVERLAY;
+				BlockRendererDispatcher blockrendererdispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
+				
+				for (net.minecraft.client.renderer.RenderType type : net.minecraft.client.renderer.RenderType.getBlockRenderTypes()) {
+					if (RenderTypeLookup.canRenderInLayer(iblockstate, type)) {
+						
+						net.minecraftforge.client.ForgeHooksClient.setRenderLayer(type);
+						
+						matrixStackIn.push();
+						matrixStackIn.translate(blockpos.getX(), blockpos.getY(), blockpos.getZ());
 
-	        	 GlStateManager.colorMask(true, true, true, true);
-		         
-		         GlStateManager.popMatrix();
-		         
-	    }
+						if (iblockstate.getBlock().hasTileEntity(iblockstate)) {
+							
+							TileEntity tileentity = iblockstate.getBlock().createTileEntity(iblockstate, world);
+							
+							if (tileentity != null) {
+								
+								TileEntityRendererDispatcher tileentityrenderdispatcher = TileEntityRendererDispatcher.instance;
+								
+								World tileentityworld = Minecraft.getInstance().world;
+								if (tileentitycompound != null) tileentity.deserializeNBT(tileentitycompound);;
+								tileentity.setWorldAndPos(tileentityworld, blockpos.add(structurePos));
+								BlockState oldstate = tileentityworld.getBlockState(blockpos.add(structurePos));
+								tileentityworld.setBlockState(blockpos.add(structurePos), iblockstate);
+								
+								try {
+									tileentityrenderdispatcher.renderTileEntity(tileentity, partialTicks, matrixStackIn, bufferIn);
+								} catch (IllegalArgumentException e) {
+									e.printStackTrace();
+								}
+								
+								tileentityworld.setBlockState(blockpos.add(structurePos), oldstate);
+																
+							}
+							
+						}
+						
+						blockrendererdispatcher.getBlockModelRenderer().renderModel(world, blockrendererdispatcher.getModelForState(iblockstate), iblockstate, blockpos.add(structurePos), matrixStackIn, bufferIn.getBuffer(type), false, world.rand, iblockstate.getPositionRandom(blockpos), combinedOverlayIn);
+						
+						matrixStackIn.pop();
+						
+					}
+					
+				}
+				
+			}
+			net.minecraftforge.client.ForgeHooksClient.setRenderLayer(null);
+			
+			GlStateManager.colorMask(true, true, true, true);
+			
+		}
 		
-	    
+	}
+	
+	@SuppressWarnings({ "resource", "deprecation" })
+	public static void renderHoloTileEntity(BlockState iblockstate, CompoundNBT tileentitycompound, BlockPos blockpos, BlockPos structurePos, boolean castToNormal, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks) {
+		
+		if (iblockstate != null ? (iblockstate.getBlock() != Blocks.AIR && iblockstate.getBlock() != Blocks.CAVE_AIR) : false) {
+						
+			World world = Minecraft.getInstance().world;
+			BlockState existstate = castToNormal ? Blocks.AIR.getDefaultState() : world.getBlockState(blockpos.add(structurePos));
+					
+			Minecraft.getInstance().getRenderManager().textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		 	
+			if (HoloStruckture.render_mode == EnumRendermode.COLOR) {
+				if (existstate.getBlock() == iblockstate.getBlock() && !existstate.equals(iblockstate)) {
+					GlStateManager.colorMask(true, false, true, true);
+				} else if (!existstate.equals(iblockstate)) {
+					GlStateManager.colorMask(true, true, false, true);
+				}
+			}
+			
+			if (!existstate.equals(iblockstate) || HoloStruckture.render_mode == EnumRendermode.NORMAL) {
+				
+			}
+			
+			GlStateManager.colorMask(true, true, true, true);
+			
+		}
+		
 	}
 	
 	public static enum EnumRendermode {

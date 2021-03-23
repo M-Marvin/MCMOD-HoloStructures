@@ -11,12 +11,12 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockStateParser;
-import net.minecraft.init.Blocks;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.math.BlockPos;
 
 public class Schematic {
@@ -28,7 +28,7 @@ public class Schematic {
 	private boolean oldVersion;
 	private HashMap<Integer, String> palette;
 	private BlockObject[] blockObjects;
-	private List<NBTTagCompound> tileentitys;
+	private List<CompoundNBT> tileentitys;
 	
 	public Schematic(File file) {
 		try {
@@ -36,12 +36,12 @@ public class Schematic {
 			String format = file.getName().split("\\.")[file.getName().split("\\.").length - 1];
 			
 			InputStream is = new FileInputStream(file);
-			NBTTagCompound nbtdata = CompressedStreamTools.readCompressed(is);
+			CompoundNBT nbtdata = CompressedStreamTools.readCompressed(is);
 			is.close();
 			
 			if (format.equals("nbt")) {
 				
-				NBTTagList sizetags = nbtdata.getList("size", 3);
+				ListNBT sizetags = nbtdata.getList("size", 3);
 				
 				width = (short) sizetags.getInt(0);
 				height = (short) sizetags.getInt(1);
@@ -49,19 +49,19 @@ public class Schematic {
 				size = width * height * length;
 				
 				this.palette = new HashMap<>();
-				NBTTagList paletteTags = nbtdata.getList("palette", 10);
+				ListNBT paletteTags = nbtdata.getList("palette", 10);
 				
 				for (int i = 0; i < paletteTags.size(); i++) {
 					
-					NBTTagCompound entrynbt = paletteTags.getCompound(i);
+					CompoundNBT entrynbt = paletteTags.getCompound(i);
 					
 					String state = entrynbt.getString("Name");
 					
-					if (entrynbt.hasKey("Properties")) {
+					if (entrynbt.contains("Properties")) {
 						
 						state += "[";
 						
-						NBTTagCompound propertiesNbt = entrynbt.getCompound("Properties");
+						CompoundNBT propertiesNbt = entrynbt.getCompound("Properties");
 						
 						for (String property : propertiesNbt.keySet()) {
 							state += property + "=" + propertiesNbt.getString(property) + ",";
@@ -75,27 +75,27 @@ public class Schematic {
 					
 				}
 				
-				NBTTagList blockTags = nbtdata.getList("blocks", 10);
+				ListNBT blockTags = nbtdata.getList("blocks", 10);
 				blockObjects = new BlockObject[size];
 				tileentitys = new ArrayList<>();
 				int counter = 0;
 				
 				for (int i = 0; i < blockTags.size(); i++) {
 					
-					NBTTagCompound blocknbt = blockTags.getCompound(i);
+					CompoundNBT blocknbt = blockTags.getCompound(i);
 					
-					NBTTagList ipos = blocknbt.getList("pos", 3);
+					ListNBT ipos = blocknbt.getList("pos", 3);
 					BlockPos pos = new BlockPos(ipos.getInt(0), ipos.getInt(1), ipos.getInt(2));
 					
 					int stateId = blocknbt.getInt("state");
-					IBlockState state = getStateFromID(stateId);
+					BlockState state = getStateFromID(stateId);
 					
 					blockObjects[counter++] = new BlockObject(pos, state);
 					
-					if (blocknbt.hasKey("nbt")) {
+					if (blocknbt.contains("nbt")) {
 						
-						NBTTagCompound tileentitynbt = blocknbt.getCompound("nbt");
-						tileentitynbt.setIntArray("Pos", new int[] {pos.getX(), pos.getY(), pos.getZ()});
+						CompoundNBT tileentitynbt = blocknbt.getCompound("nbt");
+						tileentitynbt.putIntArray("Pos", new int[] {pos.getX(), pos.getY(), pos.getZ()});
 						tileentitys.add(tileentitynbt);
 						
 					}
@@ -108,14 +108,14 @@ public class Schematic {
 				height = nbtdata.getShort("Height");
 				length = nbtdata.getShort("Length");
 				size = width * height * length;
-				this.oldVersion = !nbtdata.hasKey("DataVersion");
+				this.oldVersion = !nbtdata.contains("DataVersion");
 				
 				blockObjects = new BlockObject[size];
 				
 				if (!oldVersion) {
 					byte[] blocks = nbtdata.getByteArray("BlockData");
 					
-					NBTTagCompound palette = nbtdata.getCompound("Palette");
+					CompoundNBT palette = nbtdata.getCompound("Palette");
 					this.palette = new HashMap<Integer, String>();
 					for (String k : palette.keySet()) {
 						this.palette.put(palette.getInt(k), k);
@@ -132,7 +132,7 @@ public class Schematic {
 								
 								if (id < 0) id *= -1;
 								
-								IBlockState state = getStateFromID(id);
+								BlockState state = getStateFromID(id);
 								
 								blockObjects[counter] = new BlockObject(pos, state);
 								
@@ -142,8 +142,8 @@ public class Schematic {
 						}
 		 			}
 					
-					NBTTagList tileentitynbtlist = nbtdata.getList("BlockEntities", 10);
-					this.tileentitys = new ArrayList<NBTTagCompound>();
+					ListNBT tileentitynbtlist = nbtdata.getList("BlockEntities", 10);
+					this.tileentitys = new ArrayList<CompoundNBT>();
 					
 					for (int i = 0; i < tileentitynbtlist.size(); i++) {
 						this.tileentitys.add(tileentitynbtlist.getCompound(i));
@@ -164,23 +164,23 @@ public class Schematic {
 						for (int j = 0; j < length; j++) {
 							for (int k = 0; k < width; k++) {
 								BlockPos pos = new BlockPos(k, i , j);
-								IBlockState state = getStateFromOldIds(blockIDs[counter], metadata[counter]);
+								BlockState state = getStateFromOldIds(blockIDs[counter], metadata[counter]);
 								blockObjects[counter] = new BlockObject(pos, state);
 								counter++;
 							}
 						}
 		 			}
 					
-					NBTTagList tileentitynbtlist = nbtdata.getList("TileEntities", 10);
-					this.tileentitys = new ArrayList<NBTTagCompound>();
+					ListNBT tileentitynbtlist = nbtdata.getList("TileEntities", 10);
+					this.tileentitys = new ArrayList<CompoundNBT>();
 					
 					for (int i = 0; i < tileentitynbtlist.size(); i++) {
 						
-						NBTTagCompound compound = tileentitynbtlist.getCompound(i);
+						CompoundNBT compound = tileentitynbtlist.getCompound(i);
 						int i1 = compound.getInt("x");
 						int i2 = compound.getInt("y");
 						int i3 = compound.getInt("z");
-						compound.setIntArray("Pos", new int[] {i1, i2, i3});
+						compound.putIntArray("Pos", new int[] {i1, i2, i3});
 						this.tileentitys.add(compound);
 						
 					}
@@ -206,13 +206,13 @@ public class Schematic {
 		return oldVersion;
 	}
 	
-	private IBlockState getStateFromOldIds(int blockID, byte meta) {
-		IBlockState state = Block.getStateById(blockID);
+	private BlockState getStateFromOldIds(int blockID, byte meta) {
+		BlockState state = Block.getStateById(blockID);
 		// TODO WARNING: This a Method that only load Blocks that found under the given ID!
 		return state;
 	}
 	
-	public IBlockState getBlockState(BlockPos pos) {
+	public BlockState getBlockState(BlockPos pos) {
 		
 		for (BlockObject obj : this.blockObjects) {
 			if (obj.getPosition().equals(pos)) return obj.getState();
@@ -229,7 +229,7 @@ public class Schematic {
 		return blockObjects;
 	}
 	
-	public IBlockState getStateFromID(int id) {
+	public BlockState getStateFromID(int id) {
 
 		String iblockstateS = this.palette.get(id);
 		
@@ -247,13 +247,13 @@ public class Schematic {
 		
 	}
 	
-	public List<NBTTagCompound> getTileEntities() {
+	public List<CompoundNBT> getTileEntities() {
 		return this.tileentitys;
 	}
 	
-	public NBTTagCompound getTileEntity(BlockPos pos) {
+	public CompoundNBT getTileEntity(BlockPos pos) {
 		
-		for (NBTTagCompound compound : this.tileentitys) {
+		for (CompoundNBT compound : this.tileentitys) {
 			
 			int[] pos1 = compound.getIntArray("Pos");
 			

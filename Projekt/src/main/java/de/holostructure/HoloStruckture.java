@@ -37,7 +37,8 @@ public class HoloStruckture {
         MinecraftForge.EVENT_BUS.register(new Events());
     }
 
-    private void setup(final FMLCommonSetupEvent event)
+    @SuppressWarnings("resource")
+	private void setup(final FMLCommonSetupEvent event)
     {
         
     	lastEditedStructureId = 0;

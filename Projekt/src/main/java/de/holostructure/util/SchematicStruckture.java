@@ -4,15 +4,25 @@ import java.io.File;
 
 import org.lwjgl.opengl.GL11;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager;
+
 import de.holostructure.HoloStruckture;
 import de.holostructure.render.RenderHelper;
 import de.holostructure.schematic.BlockObject;
 import de.holostructure.schematic.Schematic;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockRenderType;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.crash.CrashReport;
+import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.crash.ReportedException;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
@@ -174,65 +184,65 @@ public class SchematicStruckture {
 		return this.activateRenderBuffer;
 	}
 	
-	@SuppressWarnings("deprecation")
-	public void render() {
+	@SuppressWarnings({ "deprecation", "resource" })
+	public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks) {
 		
+		matrixStackIn.push();
+		matrixStackIn.translate(posX, posY, posZ);
+	 	
 		if (this.isVisible() && Minecraft.getInstance().world.isRemote) {
 			
 			if (!this.hasChanged && this.activateRenderBuffer) {
 				
-				GL11.glPushMatrix();
-				EntityPlayer player = Minecraft.getInstance().player;
-        	 	GlStateManager.translated(-player.lastTickPosX, -player.lastTickPosY, -player.lastTickPosZ);
-				GlStateManager.translated(posX, posY, posZ);
-        	 	
 				GL11.glCallList(this.listId);
-				GL11.glPopMatrix();
-				
+        	 	
 			} else {
 				
 				if (this.activateRenderBuffer) {
 					if (this.listId != 0) GL11.glDeleteLists(this.listId, 1);
 					this.listId = GL11.glGenLists(1);
 					GL11.glNewList(this.listId, GL11.GL_COMPILE);
-				} else {
-					GL11.glPushMatrix();
-					EntityPlayer player = Minecraft.getInstance().player;
-	        	 	GlStateManager.translated(-player.lastTickPosX, -player.lastTickPosY, -player.lastTickPosZ);
-					GlStateManager.translated(posX, posY, posZ);
 				}
 				
 				BlockObject[] blocks = schematic.getBlocks();
 				
+				BlockPos newPos = BlockPos.ZERO;
+				BlockState newState = Blocks.AIR.getDefaultState();
 				try {
-					
+					matrixStackIn.push();
 					for (BlockObject obj : blocks) {
 						
 						boolean flag = obj.getPosition().getY() == this.visible_level - 1 || this.isDisplayAll();
 
-						double dx = Math.max(this.posX, Minecraft.getInstance().player.posX) - Math.min(this.posX, Minecraft.getInstance().player.posX);
-						double dz = Math.max(this.posZ, Minecraft.getInstance().player.posZ) - Math.min(this.posZ, Minecraft.getInstance().player.posZ);
+						double dx = Math.max(this.posX, Minecraft.getInstance().player.getPosX()) - Math.min(this.posX, Minecraft.getInstance().player.getPosX());
+						double dz = Math.max(this.posZ, Minecraft.getInstance().player.getPosZ()) - Math.min(this.posZ, Minecraft.getInstance().player.getPosZ());
 						int distance = (int) Math.max(dx, dz);
 						
 						if (flag && distance < Minecraft.getInstance().gameSettings.renderDistanceChunks * 16) {
 							
-							BlockPos newPos = calculatePositionOffset(transformBlockPos(obj.getPosition(), mirror, rotation, BlockPos.ORIGIN));
-							IBlockState newState = obj.getState().mirror(mirror != null ? mirror : Mirror.NONE).rotate(rotation != null ? rotation : Rotation.NONE);
+							newPos = calculatePositionOffset(transformBlockPos(obj.getPosition(), mirror, rotation, BlockPos.ZERO));
+							newState = obj.getState().mirror(mirror != null ? mirror : Mirror.NONE).rotate(rotation != null ? rotation : Rotation.NONE);
 							
-							NBTTagCompound tileentityCompound = schematic.getTileEntity(obj.getPosition());
+							CompoundNBT tileentityCompound = schematic.getTileEntity(obj.getPosition());
 							
-							RenderHelper.renderBlockAsGhost(newState, tileentityCompound, newPos, new BlockPos(posX, posY, posZ), this.activateRenderBuffer);
+							RenderHelper.renderHoloBlock(newState, tileentityCompound, newPos, new BlockPos(posX, posY, posZ), this.activateRenderBuffer, matrixStackIn, bufferIn, partialTicks);
 							
 						}
 						
 					}
-					
-				} catch (Exception e) {}
+					matrixStackIn.pop();
+				} catch (Exception e) {
+			         CrashReport crashreport = CrashReport.makeCrashReport(e, "Tesselating Holoblock model");
+			         CrashReportCategory crashreportcategory = crashreport.makeCategory("Holoblock model being tesselated");
+			         CrashReportCategory.addBlockInfo(crashreportcategory, newPos, newState);
+			         throw new ReportedException(crashreport);
+				}
+				
+				// Without this BoundingBox call, the last 2 tesselated blocks have not the right position
+				WorldRenderer.drawBoundingBox(matrixStackIn, bufferIn.getBuffer(RenderType.getLines()), 0, 0, 0, 0, 0, 0, 1F, 1F, 1F, 1F);
 				
 				if (this.activateRenderBuffer) {
 					GL11.glEndList();
-				} else {
-					GL11.glPopMatrix();
 				}
 				
 				this.hasChanged = false;
@@ -240,6 +250,8 @@ public class SchematicStruckture {
 			}
 			
 		}
+		
+		matrixStackIn.pop();
 		
 	}
 	
