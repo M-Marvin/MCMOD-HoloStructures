@@ -5,13 +5,11 @@ import java.io.File;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
 
 import de.holostructure.HoloStruckture;
 import de.holostructure.render.RenderHelper;
 import de.holostructure.schematic.BlockObject;
 import de.holostructure.schematic.Schematic;
-import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
@@ -21,7 +19,6 @@ import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.crash.ReportedException;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
@@ -184,74 +181,82 @@ public class SchematicStruckture {
 		return this.activateRenderBuffer;
 	}
 	
-	@SuppressWarnings({ "deprecation", "resource" })
 	public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks) {
 		
-		matrixStackIn.push();
-		matrixStackIn.translate(posX, posY, posZ);
-	 	
 		if (this.isVisible() && Minecraft.getInstance().world.isRemote) {
 			
 			if (!this.hasChanged && this.activateRenderBuffer) {
-				
+				// TODO RBO not working
+				matrixStackIn.push();
+				matrixStackIn.translate(posX, posY, posZ);
 				GL11.glCallList(this.listId);
-        	 	
+				matrixStackIn.pop();
 			} else {
 				
 				if (this.activateRenderBuffer) {
+					// TODO: RBO not working
 					if (this.listId != 0) GL11.glDeleteLists(this.listId, 1);
 					this.listId = GL11.glGenLists(1);
-					GL11.glNewList(this.listId, GL11.GL_COMPILE);
-				}
-				
-				BlockObject[] blocks = schematic.getBlocks();
-				
-				BlockPos newPos = BlockPos.ZERO;
-				BlockState newState = Blocks.AIR.getDefaultState();
-				try {
 					matrixStackIn.push();
-					for (BlockObject obj : blocks) {
-						
-						boolean flag = obj.getPosition().getY() == this.visible_level - 1 || this.isDisplayAll();
-
-						double dx = Math.max(this.posX, Minecraft.getInstance().player.getPosX()) - Math.min(this.posX, Minecraft.getInstance().player.getPosX());
-						double dz = Math.max(this.posZ, Minecraft.getInstance().player.getPosZ()) - Math.min(this.posZ, Minecraft.getInstance().player.getPosZ());
-						int distance = (int) Math.max(dx, dz);
-						
-						if (flag && distance < Minecraft.getInstance().gameSettings.renderDistanceChunks * 16) {
-							
-							newPos = calculatePositionOffset(transformBlockPos(obj.getPosition(), mirror, rotation, BlockPos.ZERO));
-							newState = obj.getState().mirror(mirror != null ? mirror : Mirror.NONE).rotate(rotation != null ? rotation : Rotation.NONE);
-							
-							CompoundNBT tileentityCompound = schematic.getTileEntity(obj.getPosition());
-							
-							RenderHelper.renderHoloBlock(newState, tileentityCompound, newPos, new BlockPos(posX, posY, posZ), this.activateRenderBuffer, matrixStackIn, bufferIn, partialTicks);
-							
-						}
-						
-					}
-					matrixStackIn.pop();
-				} catch (Exception e) {
-			         CrashReport crashreport = CrashReport.makeCrashReport(e, "Tesselating Holoblock model");
-			         CrashReportCategory crashreportcategory = crashreport.makeCategory("Holoblock model being tesselated");
-			         CrashReportCategory.addBlockInfo(crashreportcategory, newPos, newState);
-			         throw new ReportedException(crashreport);
-				}
-				
-				// Without this BoundingBox call, the last 2 tesselated blocks have not the right position
-				WorldRenderer.drawBoundingBox(matrixStackIn, bufferIn.getBuffer(RenderType.getLines()), 0, 0, 0, 0, 0, 0, 1F, 1F, 1F, 1F);
-				
-				if (this.activateRenderBuffer) {
+					GL11.glNewList(this.listId, GL11.GL_COMPILE);
+					renderBlockObjects(matrixStackIn, bufferIn, partialTicks);
 					GL11.glEndList();
+					matrixStackIn.pop();
+					this.hasChanged = false;
+				} else {
+					matrixStackIn.push();
+					matrixStackIn.translate(posX, posY, posZ);
+					renderBlockObjects(matrixStackIn, bufferIn, partialTicks);
+					matrixStackIn.pop();
 				}
-				
-				this.hasChanged = false;
 				
 			}
 			
 		}
 		
-		matrixStackIn.pop();
+		
+		
+	}
+	
+	@SuppressWarnings({ "resource", "deprecation" })
+	protected void renderBlockObjects(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks) {
+		
+		BlockObject[] blocks = schematic.getBlocks();
+		
+		BlockPos newPos = BlockPos.ZERO;
+		BlockState newState = Blocks.AIR.getDefaultState();
+		try {
+			matrixStackIn.push();
+			for (BlockObject obj : blocks) {
+				
+				boolean flag = obj.getPosition().getY() == this.visible_level - 1 || this.isDisplayAll();
+
+				double dx = Math.max(this.posX, Minecraft.getInstance().player.getPosX()) - Math.min(this.posX, Minecraft.getInstance().player.getPosX());
+				double dz = Math.max(this.posZ, Minecraft.getInstance().player.getPosZ()) - Math.min(this.posZ, Minecraft.getInstance().player.getPosZ());
+				int distance = (int) Math.max(dx, dz);
+				
+				if (flag && distance < Minecraft.getInstance().gameSettings.renderDistanceChunks * 16) {
+					
+					newPos = calculatePositionOffset(transformBlockPos(obj.getPosition(), mirror, rotation, BlockPos.ZERO));
+					newState = obj.getState().mirror(mirror != null ? mirror : Mirror.NONE).rotate(rotation != null ? rotation : Rotation.NONE);
+					
+					CompoundNBT tileentityCompound = schematic.getTileEntity(obj.getPosition());
+					
+					RenderHelper.renderHoloBlock(newState, tileentityCompound, newPos, new BlockPos(posX, posY, posZ), this.activateRenderBuffer, matrixStackIn, bufferIn, partialTicks);
+					
+				}
+				
+			}
+			matrixStackIn.pop();
+		} catch (Exception e) {
+	         CrashReport crashreport = CrashReport.makeCrashReport(e, "Tesselating Holoblock model");
+	         CrashReportCategory crashreportcategory = crashreport.makeCategory("Holoblock model being tesselated");
+	         CrashReportCategory.addBlockInfo(crashreportcategory, newPos, newState);
+	         throw new ReportedException(crashreport);
+		}
+		
+		// Without this BoundingBox call, the last 2 tesselated blocks have not the correct position
+		WorldRenderer.drawBoundingBox(matrixStackIn, bufferIn.getBuffer(RenderType.getLines()), 0, 0, 0, 0, 0, 0, 1F, 1F, 1F, 1F);
 		
 	}
 	

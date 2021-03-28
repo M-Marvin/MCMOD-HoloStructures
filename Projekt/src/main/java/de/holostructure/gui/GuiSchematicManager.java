@@ -2,8 +2,6 @@ package de.holostructure.gui;
 
 import java.awt.Color;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 
@@ -12,13 +10,11 @@ import de.holostructure.util.SchematicStruckture;
 import de.holostructure.util.SchematicStruckture.VisibleMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
@@ -69,19 +65,19 @@ public class GuiSchematicManager extends Screen {
 		Color color_fill = new Color(64, 64, 64, 120);
 		Color color_selcted = new Color(14, 190, 5, 120);
 		Color color_unselcted = new Color(188, 1, 23, 120);
-//		drawRect(122, 0, 120, this.height, color_line.getRGB());
-//		drawRect(120, 0, 0, this.height, color_fill.getRGB());
-//		drawRect(122, 0, this.width, 40, color_fill.getRGB());
-//		drawRect(122, 40, this.width, 42, color_line.getRGB());
-//		drawRect(0, 150, 120, 152, color_line.getRGB());
-//		drawRect(this.width - 122, 40, this.width - 120, this.height, color_line.getRGB());
-//		drawRect(this.width - 120, 40, this.width, this.height, color_fill.getRGB());
+		fill(matrixStack, 122, 0, 120, this.height, color_line.getRGB());
+		fill(matrixStack, 120, 0, 0, this.height, color_fill.getRGB());
+		fill(matrixStack, 122, 0, this.width, 40, color_fill.getRGB());
+		fill(matrixStack, 122, 40, this.width, 42, color_line.getRGB());
+		fill(matrixStack, 0, 150, 120, 152, color_line.getRGB());
+		fill(matrixStack, this.width - 122, 40, this.width - 120, this.height, color_line.getRGB());
+		fill(matrixStack, this.width - 120, 40, this.width, this.height, color_fill.getRGB());
 		
 		for (int index = 0; index < 5; index++) {
 			
 			int i1 =  select_y + (select_heigth + button_distance) * index;
 			int i2 =  select_y + (select_heigth + button_distance) * selected_schematic;
-			//drawRect(select_x + select_width, i1, select_x + select_width + 10, i1 + select_heigth, i1 == i2 ? color_selcted.getRGB() : color_unselcted.getRGB());
+			fill(matrixStack, select_x + select_width, i1, select_x + select_width + 10, i1 + select_heigth, i1 == i2 ? color_selcted.getRGB() : color_unselcted.getRGB());
 			
 		}
 		
@@ -117,7 +113,6 @@ public class GuiSchematicManager extends Screen {
 		
 		if (this.enableRBO.isMouseOver(mouseX, mouseY)) {
 			renderTooltip(matrixStack, new TranslationTextComponent("guiinfo.RBO"), 120, 60);
-			//drawHoveringText(matrixStack, info2, 120, 60);
 		}
 		
 		super.render(matrixStack, mouseX, mouseY, partialTicks);
@@ -182,7 +177,8 @@ public class GuiSchematicManager extends Screen {
 		});
 		this.addButton(this.renderMod);
 		this.enableRBO = new Button(10, 220, 100, 20, new TranslationTextComponent("gui.rbo." + (RBOenabled ? "enabled" : "disabled")), (button) -> {
-			GuiSchematicManager.this.RBOenabled = !GuiSchematicManager.this.RBOenabled;
+			// TODO: RBO not working!
+			//GuiSchematicManager.this.RBOenabled = !GuiSchematicManager.this.RBOenabled;
 		});
 		this.addButton(this.enableRBO);
 		

@@ -12,9 +12,7 @@ import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -44,6 +42,7 @@ public class RenderHelper {
 				int combinedOverlayIn = OverlayTexture.NO_OVERLAY;
 				BlockRendererDispatcher blockrendererdispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
 				
+				
 				for (net.minecraft.client.renderer.RenderType type : net.minecraft.client.renderer.RenderType.getBlockRenderTypes()) {
 					if (RenderTypeLookup.canRenderInLayer(iblockstate, type)) {
 						
@@ -52,29 +51,33 @@ public class RenderHelper {
 						matrixStackIn.push();
 						matrixStackIn.translate(blockpos.getX(), blockpos.getY(), blockpos.getZ());
 
+
 						if (iblockstate.getBlock().hasTileEntity(iblockstate)) {
 							
-							TileEntity tileentity = iblockstate.getBlock().createTileEntity(iblockstate, world);
+							iblockstate = Blocks.STRUCTURE_BLOCK.getDefaultState();
 							
-							if (tileentity != null) {
-								
-								TileEntityRendererDispatcher tileentityrenderdispatcher = TileEntityRendererDispatcher.instance;
-								
-								World tileentityworld = Minecraft.getInstance().world;
-								if (tileentitycompound != null) tileentity.deserializeNBT(tileentitycompound);;
-								tileentity.setWorldAndPos(tileentityworld, blockpos.add(structurePos));
-								BlockState oldstate = tileentityworld.getBlockState(blockpos.add(structurePos));
-								tileentityworld.setBlockState(blockpos.add(structurePos), iblockstate);
-								
-								try {
-									tileentityrenderdispatcher.renderTileEntity(tileentity, partialTicks, matrixStackIn, bufferIn);
-								} catch (IllegalArgumentException e) {
-									e.printStackTrace();
-								}
-								
-								tileentityworld.setBlockState(blockpos.add(structurePos), oldstate);
-																
-							}
+//							// TODO TileEntity rendering				
+//							TileEntity tileentity = iblockstate.getBlock().createTileEntity(iblockstate, world);
+//							
+//							if (tileentity != null) {
+//								
+//								TileEntityRendererDispatcher tileentityrenderdispatcher = TileEntityRendererDispatcher.instance;
+//								
+//								World tileentityworld = Minecraft.getInstance().world;
+//								if (tileentitycompound != null) tileentity.deserializeNBT(tileentitycompound);;
+//								tileentity.setWorldAndPos(tileentityworld, blockpos.add(structurePos));
+//								BlockState oldstate = tileentityworld.getBlockState(blockpos.add(structurePos));
+//								tileentityworld.setBlockState(blockpos.add(structurePos), iblockstate);
+//								
+//								try {
+//									tileentityrenderdispatcher.renderTileEntity(tileentity, partialTicks, matrixStackIn, bufferIn);
+//								} catch (IllegalArgumentException e) {
+//									e.printStackTrace();
+//								}
+//								
+//								tileentityworld.setBlockState(blockpos.add(structurePos), oldstate);
+//																
+//							}
 							
 						}
 						

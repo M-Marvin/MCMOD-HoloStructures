@@ -18,15 +18,9 @@
 "key.openschematicmenu": "Schematic Menue",
 "gui.warnoldversion": "WARNUNG! Alte Schematic version konnte nicht korekt geladen werden!\nenthaelt Block-IDs (wie 0, 1, 23, 2, ...)\nund keine Block-Namen (wie minecraft:stone, minecraft:grass[snowy=false]).\nUm die Datei umzuwandeln kannst du\ndie Datei mit WorldEdit (oder irgend einem anderen\nMod der diese Version unterstuezt) \nin eine Welt laden und neu speichern.",
 "warninginfo": "Die geladene Datei ist eine alte Version, sie",
-"gui.rbo.enabled": "RBO Aktiviert",
-"gui.rbo.disabled": "RBO Deaktiviert", 
-"guiinfo.RBO": "RenderBufferObject (RBO) nur bei grossen\nStrukturen aktivieren, wenn es stark ruckelt!\nVorteil: - mehr FPS\nNachteil: - nur Rendermodus \"Normal\"\nwird korekt unterstuetzt",
+"gui.rbo.enabled": "\u00A74RBO Aktiviert",
+"gui.rbo.disabled": "\u00A74RBO Deaktiviert", 
+"guiinfo.RBO": "\u00A74FUNKTIONIERT NOCH NICHT!\u00A7r\nRenderBufferObject (RBO) nur bei grossen\nStrukturen aktivieren, wenn es stark ruckelt!\nVorteil: - mehr FPS\nNachteil: - nur Rendermodus \"Normal\"\nwird korekt unterstuetzt",
 "gui.folderinfo": "Schematics hier einfuegen: .minecraft/config/Schematics/",
-"gui.madeby": "Gemacht von ",
-"gui.selectpixelart": "PixelArt Vorlage",
-"gui.select_pixelart.path": "Datei laden",
-"gui.displayrow": "Angezeigte Zeile",
-"key.togglepixelart": "PixelArts Einblenden/Ausblenden",
-"key.openpixelartmenu": "PixelArt Menue",
-"gui.folderinfopixelart": "Vorlagen hier einfügen: .minecraft/config/PixelArts/"
+"gui.madeby": "Gemacht von "
 }
